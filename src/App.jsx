@@ -11,7 +11,7 @@ function App() {
   const videoRef = useRef(null);
   const imgCanvasRef = useRef(null);
   const vidCanvasRef = useRef(null);
-  const photoRef = useRef(null);
+  const buttonRef = useRef(null);
   const width = 1280;
   const height = 720;
 
@@ -61,8 +61,8 @@ function App() {
           : await navigator.mediaDevices.getUserMedia({
               video: {
                 deviceId: { exact: currentDevice },
-                width: { exact: 1280 },
-                height: { exact: 720 },
+                width: { exact: width },
+                height: { exact: height },
               },
             });
       videoRef.current.srcObject = stream;
@@ -71,8 +71,6 @@ function App() {
       alert(e.message);
       console.log(e.message);
     }
-
-    clearPhoto();
   };
 
   const loadModel = async () => {
@@ -80,28 +78,20 @@ function App() {
     setModel(model);
   };
 
-  const handleClik = () => {
+  const handleClik = (event) => {
+    event.target.disabled = true;
     takePicture();
   };
 
-  const handleLoadImage = () => {
-    const context = imgCanvasRef.current.getContext("2d");
+  const handleCanPlayVideo = () => {
+    const context = vidCanvasRef.current.getContext("2d");
 
-    context.font = "bold 20px Arial";
-
-    drawPredictions(context, imgCanvasRef.current);
-  };
-
-  const clearPhoto = () => {
-    const context = imgCanvasRef.current.getContext("2d");
-    context.fillStyle = "#AAA";
-    context.fillRect(0, 0, width, height);
-
-    const data = imgCanvasRef.current.toDataURL("image/png");
-    photoRef.current.setAttribute("src", data);
+    detectFromVideoFrame(context, videoRef.current);
   };
 
   const takePicture = () => {
+    const image = new Image();
+
     const context = imgCanvasRef.current.getContext("2d");
 
     imgCanvasRef.current.width = width;
@@ -110,14 +100,42 @@ function App() {
     context.drawImage(videoRef.current, 0, 0, width, height);
 
     const data = imgCanvasRef.current.toDataURL("image/png");
-    photoRef.current.setAttribute("src", data);
+    image.setAttribute("src", data);
+    image.addEventListener("load", async () =>
+      detectFromImageFrame(context, imgCanvasRef.current)
+    );
   };
 
-  const drawPredictions = async (context, canvas) => {
-    const predictions = await model.detect(canvas);
-    console.log("Predictions: ", predictions);
+  const detectFromImageFrame = async (context, image) => {
+    await model.detect(image).then((predictions) => {
+      showDetections(context, predictions, "image");
+      buttonRef.current.disabled = false;
+    });
+  };
+
+  const detectFromVideoFrame = async (context, video) => {
+    await model.detect(video).then((predictions) => {
+      vidCanvasRef.current.width = video.videoWidth;
+      vidCanvasRef.current.height = video.videoHeight;
+
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+      context.drawImage(videoRef.current, 0, 0, video.videoWidth, video.videoHeight);
+      showDetections(context, predictions, "video");
+      
+      requestAnimationFrame(() => {
+        detectFromVideoFrame(context, video);
+      });
+    });
+
+  };
+
+  const showDetections = (context, predictions, log) => {
+    const color = "red";
+    context.font = "bold 36px Arial";
+
+    console.log(log,"Predictions: ", predictions);
+
     predictions.forEach((pred) => {
-      const color = "red";
       context.beginPath();
       context.rect(...pred.bbox);
       context.lineWidth = 6;
@@ -127,7 +145,7 @@ function App() {
       context.fillText(
         `${pred.score.toFixed(3)} ${pred.class}`,
         pred.bbox[0] + 20,
-        pred.bbox[1] + 20
+        pred.bbox[1] + 36
       );
     });
   };
@@ -148,7 +166,12 @@ function App() {
             <section className="canvases">
               <div className="video-container">
                 <h2>Vidéos en temps Réel</h2>
-                <video preload="none" id="video" ref={videoRef}>
+                <video
+                  preload="none"
+                  id="video"
+                  onCanPlay={handleCanPlayVideo}
+                  ref={videoRef}
+                >
                   Le flux vidéo n&apos;est pas disponible.
                 </video>
               </div>
@@ -159,12 +182,6 @@ function App() {
               <div className="detection-container">
                 <h2>Image : Objets Détectés</h2>
                 <div>
-                  <img
-                    id="detection-canvas"
-                    onLoad={handleLoadImage}
-                    ref={photoRef}
-                    hidden
-                  />
                   <canvas ref={imgCanvasRef}> </canvas>
                 </div>
               </div>
@@ -193,6 +210,7 @@ function App() {
               className="screen-button"
               id="screenshot-button"
               onClick={handleClik}
+              ref={buttonRef}
             >
               Captures
             </button>
