@@ -3,9 +3,9 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* color-scheme: light dark; */
+  /* color: rgba(255, 255, 255, 0.87); */
+  /* background-color: #242424; */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -14,8 +14,9 @@
 }
 
 body {
+  font-family: Arial, sans-serif;
   margin: 0;
-  display: flex;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  background: rgb(255,255,255);
+background: linear-gradient(185deg, rgba(255,255,255,1) 0%, rgba(0,0,0,0.6012998949579832) 100%);
 }
