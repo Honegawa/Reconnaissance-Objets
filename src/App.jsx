@@ -1,23 +1,29 @@
 import { useState, useEffect, useRef } from "react";
+
+// TensorFlow
+import * as cocoSsd from "@tensorflow-models/coco-ssd";
+import "@tensorflow/tfjs";
+
 // CSS
 import "./App.css";
 
 function App() {
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
+  const imgCanvasRef = useRef(null);
+  const vidCanvasRef = useRef(null);
   const photoRef = useRef(null);
+  const width = 1280;
+  const height = 720;
 
   const [userDevices, setUserDevices] = useState([]);
   const [deviceSelect, setDeviceSelect] = useState();
   const [currentDevice, setCurrentDevice] = useState();
-  const [streaming, setStreaming] = useState(false);
-
-  let width = 320;
-  let height = 0;
+  const [model, setModel] = useState(null);
 
   // Charge les cameras de l'utilisateur
   useEffect(() => {
     getUserFlux();
+    loadModel();
   }, []);
 
   // Genere les options pour la selection des cameras
@@ -53,64 +59,77 @@ function App() {
               audio: false,
             })
           : await navigator.mediaDevices.getUserMedia({
-              video: { deviceId: { exact: currentDevice } },
+              video: {
+                deviceId: { exact: currentDevice },
+                width: { exact: 1280 },
+                height: { exact: 720 },
+              },
             });
       videoRef.current.srcObject = stream;
       videoRef.current.play();
     } catch (e) {
+      alert(e.message);
       console.log(e.message);
     }
 
     clearPhoto();
   };
 
-  const handleCanPlay = () => {
-    if (!streaming) {
-      height = videoRef.current.videoHeight / (videoRef.current.videoWidth / width);
-
-      // Firefox a un bug où la hauteur ne peut pas être lue
-      // à partir de la vidéo. On prend des précautions.
-
-      if (isNaN(height)) {
-        height = width / (4 / 3);
-      }
-
-      videoRef.current.setAttribute("width", width);
-      videoRef.current.setAttribute("height", height);
-      photoRef.current.setAttribute("width", width);
-      photoRef.current.setAttribute("height", height);
-      canvasRef.current.setAttribute("width", width);
-      canvasRef.current.setAttribute("height", height);
-      setStreaming(true);
-    }
-  }
+  const loadModel = async () => {
+    const model = await cocoSsd.load();
+    setModel(model);
+  };
 
   const handleClik = () => {
     takePicture();
   };
 
-  const clearPhoto = () => {
-    const context = canvasRef.current.getContext("2d");
-    context.fillStyle = "#AAA";
-    context.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  const handleLoadImage = () => {
+    const context = imgCanvasRef.current.getContext("2d");
 
-    const data = canvasRef.current.toDataURL("image/png");
+    context.font = "bold 20px Arial";
+
+    drawPredictions(context, imgCanvasRef.current);
+  };
+
+  const clearPhoto = () => {
+    const context = imgCanvasRef.current.getContext("2d");
+    context.fillStyle = "#AAA";
+    context.fillRect(0, 0, width, height);
+
+    const data = imgCanvasRef.current.toDataURL("image/png");
     photoRef.current.setAttribute("src", data);
   };
 
   const takePicture = () => {
-    const context = canvasRef.current.getContext("2d");
-    if (width && height) {
-      canvasRef.current.width = width;
-      canvasRef.current.height = height;
-      context.drawImage(videoRef.current, 0, 0, width, height);
+    const context = imgCanvasRef.current.getContext("2d");
 
-      const data = canvasRef.current.toDataURL("image/png");
-      console.log(data);
-      photoRef.current.setAttribute("src", data);
-    } else {
-      clearPhoto();
-    }
+    imgCanvasRef.current.width = width;
+    imgCanvasRef.current.height = height;
+
+    context.drawImage(videoRef.current, 0, 0, width, height);
+
+    const data = imgCanvasRef.current.toDataURL("image/png");
+    photoRef.current.setAttribute("src", data);
+  };
+
+  const drawPredictions = async (context, canvas) => {
+    const predictions = await model.detect(canvas);
+    console.log("Predictions: ", predictions);
+    predictions.forEach((pred) => {
+      const color = "red";
+      context.beginPath();
+      context.rect(...pred.bbox);
+      context.lineWidth = 6;
+      context.strokeStyle = color;
+      context.fillStyle = color;
+      context.stroke();
+      context.fillText(
+        `${pred.score.toFixed(3)} ${pred.class}`,
+        pred.bbox[0] + 20,
+        pred.bbox[1] + 20
+      );
+    });
   };
 
   return (
@@ -120,51 +139,65 @@ function App() {
       </header>
 
       <main>
-        <section className="canvases">
-          <div className="video-container">
-            <h2>Vidéos en temps Réel</h2>
-            <video preload="none" id="video" onCanPlay={handleCanPlay} ref={videoRef}>
-              Le flux vidéo n&apos;est pas disponible.
-            </video>
-          </div>
-          <div className="detection-container">
-            <h2>Video : Objets Détectés</h2>
-            <canvas id="video-canvas" ref={canvasRef}>
-              {/* L'apércue actuelle de la caméra ici */}
-            </canvas>
-          </div>
-          <div className="detection-container">
-            <h2>Image : Objets Détectés</h2>
-            <img id="detection-canvas" ref={photoRef}>{/* La capture ici*/}</img>
-          </div>
-        </section>
+        {!model ? (
+          <section>
+            <h2>Chargement du model en cours...</h2>
+          </section>
+        ) : (
+          <>
+            <section className="canvases">
+              <div className="video-container">
+                <h2>Vidéos en temps Réel</h2>
+                <video preload="none" id="video" ref={videoRef}>
+                  Le flux vidéo n&apos;est pas disponible.
+                </video>
+              </div>
+              <div className="detection-container">
+                <h2>Video : Objets Détectés</h2>
+                <canvas ref={vidCanvasRef}> </canvas>
+              </div>
+              <div className="detection-container">
+                <h2>Image : Objets Détectés</h2>
+                <div>
+                  <img
+                    id="detection-canvas"
+                    onLoad={handleLoadImage}
+                    ref={photoRef}
+                    hidden
+                  />
+                  <canvas ref={imgCanvasRef}> </canvas>
+                </div>
+              </div>
+            </section>
 
-        <section className="controls">
-          <div className="choix_camera">
-            <label htmlFor="camera-select">Choix de la caméra: </label>
-            <select
-              name="camera"
-              id="camera-select"
-              onChange={(e) =>
-                setCurrentDevice(
-                  userDevices.filter(
-                    (device) => device.label == e.target.value
-                  )[0].deviceId
-                )
-              }
+            <section className="controls">
+              <div className="choix_camera">
+                <label htmlFor="camera-select">Choix de la caméra: </label>
+                <select
+                  name="camera"
+                  id="camera-select"
+                  onChange={(e) =>
+                    setCurrentDevice(
+                      userDevices.filter(
+                        (device) => device.label == e.target.value
+                      )[0].deviceId
+                    )
+                  }
+                >
+                  {deviceSelect}
+                </select>
+              </div>
+            </section>
+
+            <button
+              className="screen-button"
+              id="screenshot-button"
+              onClick={handleClik}
             >
-              {deviceSelect}
-            </select>
-          </div>
-        </section>
-
-        <button
-          className="screen-button"
-          id="screenshot-button"
-          onClick={handleClik}
-        >
-          Captures
-        </button>
+              Captures
+            </button>
+          </>
+        )}
 
         <section className="log-galerie">
           <div className="log">

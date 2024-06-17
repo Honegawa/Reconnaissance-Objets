@@ -38,9 +38,11 @@ main {
   text-align: center;
 }
 
-.video-container canvas,
+.video-container video,
 .detection-container canvas,
 .detection-container img {
+  width: 320px;
+  height: 240px;
   /* La video */
   background-color: #000;
 }
