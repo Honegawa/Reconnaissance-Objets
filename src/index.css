@@ -17,6 +17,5 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: rgb(255,255,255);
-background: linear-gradient(185deg, rgba(255,255,255,1) 0%, rgba(0,0,0,0.6012998949579832) 100%);
+  background: linear-gradient(185deg, rgba(255,255,255,1) 0%, rgba(0,0,0,0.6012998949579832) 100%);
 }
