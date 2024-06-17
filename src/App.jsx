@@ -11,6 +11,7 @@ function App() {
   const videoRef = useRef(null);
   const imgCanvasRef = useRef(null);
   const vidCanvasRef = useRef(null);
+  const buttonRef = useRef(null);
   const width = 1280;
   const height = 720;
 
@@ -77,7 +78,8 @@ function App() {
     setModel(model);
   };
 
-  const handleClik = () => {
+  const handleClik = (event) => {
+    event.target.disabled = true;
     takePicture();
   };
 
@@ -107,6 +109,7 @@ function App() {
   const detectFromImageFrame = async (context, image) => {
     await model.detect(image).then((predictions) => {
       showDetections(context, predictions, "image");
+      buttonRef.current.disabled = false;
     });
   };
 
@@ -207,6 +210,7 @@ function App() {
               className="screen-button"
               id="screenshot-button"
               onClick={handleClik}
+              ref={buttonRef}
             >
               Captures
             </button>
