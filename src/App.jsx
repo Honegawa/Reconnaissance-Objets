@@ -18,7 +18,6 @@ function App() {
   const height = 720;
 
   const [userDevices, setUserDevices] = useState([]);
-  const [deviceSelect, setDeviceSelect] = useState();
   const [currentDevice, setCurrentDevice] = useState();
   const [model, setModel] = useState(null);
   const [logDetections, setLogDetections] = useState([]);
@@ -32,29 +31,10 @@ function App() {
     loadModel();
   }, []);
 
-  // Genere les options pour la selection des cameras
-  useEffect(() => {
-    userDevices.length != 0 && displayDevices();
-  }, [userDevices]);
-
-  // Charge le flux video en fonction de la camera choisie
-  useEffect(() => {
-    startup();
-  }, [currentDevice]);
-
   const getUserFlux = async () => {
     const devices = await navigator.mediaDevices.enumerateDevices();
     setUserDevices(devices.filter((device) => device.kind == "videoinput"));
   };
-
-  const displayDevices = () =>
-    setDeviceSelect(
-      userDevices.map((device, index) => (
-        <option key={index} id={device.deviceId}>
-          {device.label}
-        </option>
-      ))
-    );
 
   const loadDb = async () => {
     await Db.dbInit();
@@ -73,35 +53,56 @@ function App() {
     }
   };
 
-  const startup = async () => {
-    try {
-      const stream =
-        currentDevice === undefined
-          ? await navigator.mediaDevices.getUserMedia({
-              video: true,
-              audio: false,
-            })
-          : await navigator.mediaDevices.getUserMedia({
-              video: {
-                deviceId: { exact: currentDevice },
-                width: { exact: width },
-                height: { exact: height },
-              },
-            });
-      videoRef.current.srcObject = stream;
-      videoRef.current.play();
-    } catch (e) {
-      alert(e.message);
-      console.log(e.message);
-    }
-  };
-
   const loadModel = async () => {
     const model = await cocoSsd.load();
     setModel(model);
   };
 
-  const handleClik = (event) => {
+  const handleCamChange = async (event) => {
+    try {
+      let stream;
+
+      // Set default device on first cam load
+      if (!currentDevice) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+
+        const id = userDevices.find(
+          (device) => device.label === stream.getVideoTracks()[0].label
+        ).deviceId;
+        event.target.value = id;
+        setCurrentDevice(id);
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: event.target.value },
+          },
+        });
+
+        setCurrentDevice(event.target.value);
+      }
+      videoRef.current.srcObject = stream;
+      videoRef.current.play();
+    } catch (e) {
+      console.log(e);
+
+      if (e.message) {
+        // Handle cam device not supported
+        alert(e.message, event.target.value);
+        event.target.options[event.target.selectedIndex].disabled = true;
+      } else {
+        // Handle failed loading cam
+        if (currentDevice) {
+          alert("Le chargement de la caméra n'a aboutie. Veuillez réessayer.");
+        }
+      }
+      event.target.value = currentDevice;
+    }
+  };
+
+  const handleClick = (event) => {
     event.target.disabled = true;
     takePicture();
   };
@@ -157,24 +158,23 @@ function App() {
   };
 
   const detectFromVideoFrame = async (context, video) => {
-    await model.detect(video).then((predictions) => {
-      vidCanvasRef.current.width = video.videoWidth;
-      vidCanvasRef.current.height = video.videoHeight;
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
 
-      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-      context.drawImage(
-        videoRef.current,
-        0,
-        0,
-        video.videoWidth,
-        video.videoHeight
-      );
-      showDetections(context, predictions, "video");
+    if (videoWidth && videoHeight) {
+      await model.detect(video).then((predictions) => {
+        vidCanvasRef.current.width = videoWidth;
+        vidCanvasRef.current.height = videoHeight;
 
-      requestAnimationFrame(() => {
-        detectFromVideoFrame(context, video);
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        context.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+        showDetections(context, predictions, "video");
+
+        requestAnimationFrame(() => {
+          detectFromVideoFrame(context, video);
+        });
       });
-    });
+    }
   };
 
   const showDetections = (context, predictions, log) => {
@@ -182,6 +182,7 @@ function App() {
     context.font = "bold 36px Arial";
 
     // console.log(log,"Predictions: ", predictions);
+
     predictions.forEach((pred) => {
       context.beginPath();
       context.rect(...pred.bbox);
@@ -260,15 +261,20 @@ function App() {
                 <select
                   name="camera"
                   id="camera-select"
-                  onChange={(e) =>
-                    setCurrentDevice(
-                      userDevices.filter(
-                        (device) => device.label == e.target.value
-                      )[0].deviceId
-                    )
-                  }
+                  onChange={handleCamChange}
                 >
-                  {deviceSelect}
+                  <option value="" hidden>
+                    Selectionner une caméra
+                  </option>
+                  {userDevices.map((device, index) => (
+                    <option
+                      key={index}
+                      id={device.deviceId}
+                      value={device.deviceId}
+                    >
+                      {device.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </section>
@@ -276,7 +282,7 @@ function App() {
             <button
               className="screen-button"
               id="screenshot-button"
-              onClick={handleClik}
+              onClick={handleClick}
               ref={buttonRef}
             >
               Captures
