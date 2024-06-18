@@ -18,6 +18,9 @@ function App() {
   const height = 720;
 
   const [userDevices, setUserDevices] = useState([]);
+
+  const [tabScreen, setTabScreen] = useState([]);
+
   const [deviceSelect, setDeviceSelect] = useState();
   const [currentDevice, setCurrentDevice] = useState();
   const [model, setModel] = useState(null);
@@ -137,8 +140,26 @@ function App() {
 
   const detectFromImageFrame = async (context, image) => {
     await model.detect(image).then((predictions) => {
+      // console.log("Image Predictions: ", predictions); // L'image screen !!!!!!
+      // console.log("Image Predictions: ", predictions[0].class);
       showDetections(context, predictions, "image");
       buttonRef.current.disabled = false;
+
+      const date = new Date(Date.now());
+      const localDate = date.toLocaleDateString();
+      const localTime = date.toLocaleTimeString();
+
+      const screenClasses = predictions.map((prediction) => {
+        return {
+          class: prediction.class,
+          dateTime: `${localDate} à ${localTime}`,
+        };
+      });
+      setTabScreen((prev) => [...prev, ...screenClasses]);
+      // console.log(`table des screen : ${tabScreen}`);
+
+      // const timestamp = Date.now();
+      // const dates = new Date(timestamp).toDateString();
     });
   };
 
@@ -233,7 +254,7 @@ function App() {
                 <canvas ref={vidCanvasRef}> </canvas>
               </div>
               <div className="detection-container">
-                <h2>Image : Objets Détectés</h2>
+                <h2>Image : Objets Screen</h2>
                 <div>
                   <canvas ref={imgCanvasRef}> </canvas>
                 </div>
@@ -273,7 +294,14 @@ function App() {
         <section className="log-galerie">
           <div className="log">
             <h2>Log des Captures</h2>
-            <div id="log-console">{/* <!-- Les  Loggg  --> */}</div>
+            <div id="log-console">
+              {/* <!-- Les  Loggg  --> */}
+              {tabScreen.map((screen, index) => (
+                <li key={index}>
+                  On a détecté un(e) {screen.class} le {screen.dateTime}
+                </li>
+              ))}
+            </div>
           </div>
           <div className="galery">
             <h2>Galerie({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
