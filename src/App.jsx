@@ -12,10 +12,12 @@ import "./App.css";
 function App() {
   const videoRef = useRef(null);
   const imgCanvasRef = useRef(null);
-  const vidCanvasRef = useRef(null);
+  const vidDetectionRef = useRef(null);
   const buttonRef = useRef(null);
   const width = 1280;
   const height = 720;
+
+  let interval;
 
   const [userDevices, setUserDevices] = useState([]);
   const [currentDevice, setCurrentDevice] = useState();
@@ -59,9 +61,12 @@ function App() {
   };
 
   const handleCamChange = async (event) => {
+    if (interval) {
+      clearInterval(interval);
+    }
+
     try {
       let stream;
-
       // Set default device on first cam load
       if (!currentDevice) {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -108,9 +113,11 @@ function App() {
   };
 
   const handleCanPlayVideo = () => {
-    const context = vidCanvasRef.current.getContext("2d");
-
-    detectFromVideoFrame(context, videoRef.current);
+    if (currentDevice && !interval) {
+      interval = setInterval(() => {
+        detectFromVideo(model);
+      }, 1000);
+    }
   };
 
   const takePicture = () => {
@@ -157,31 +164,26 @@ function App() {
     });
   };
 
-  const detectFromVideoFrame = async (context, video) => {
+  const detectFromVideo = async (model) => {
+    const context = vidDetectionRef.current.getContext("2d");
+    const video = videoRef.current;
     const videoWidth = video.videoWidth;
     const videoHeight = video.videoHeight;
 
-    if (videoWidth && videoHeight) {
+    if (currentDevice && videoWidth && videoHeight) {
       await model.detect(video).then((predictions) => {
-        vidCanvasRef.current.width = videoWidth;
-        vidCanvasRef.current.height = videoHeight;
+        vidDetectionRef.current.width = videoWidth;
+        vidDetectionRef.current.height = videoHeight;
 
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-        context.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
-        showDetections(context, predictions, "video");
-
-        requestAnimationFrame(() => {
-          detectFromVideoFrame(context, video);
-        });
+        showDetections(context, predictions);
       });
     }
   };
 
-  const showDetections = (context, predictions, log) => {
+  const showDetections = (context, predictions) => {
     const color = "red";
     context.font = "bold 36px Arial";
-
-    // console.log(log,"Predictions: ", predictions);
 
     predictions.forEach((pred) => {
       context.beginPath();
@@ -239,16 +241,14 @@ function App() {
                   id="video"
                   onCanPlay={handleCanPlayVideo}
                   ref={videoRef}
-                >
-                  Le flux vidéo n&apos;est pas disponible.
-                </video>
+                />
+                <canvas
+                  id="detection-video-canva"
+                  ref={vidDetectionRef}
+                ></canvas>
               </div>
               <div className="detection-container">
-                <h2>Video : Objets Détectés</h2>
-                <canvas ref={vidCanvasRef}> </canvas>
-              </div>
-              <div className="detection-container">
-                <h2>Image : Objets Screen</h2>
+                <h2>Détection de la capture d&apos;image</h2>
                 <div>
                   <canvas ref={imgCanvasRef}> </canvas>
                 </div>
@@ -285,7 +285,7 @@ function App() {
               onClick={handleClick}
               ref={buttonRef}
             >
-              Captures
+              Capture
             </button>
           </>
         )}
@@ -336,6 +336,7 @@ function App() {
               </table>
             </div>
           </div>
+
           <div className="galery">
             <h2>Galerie ({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
             <div className="last-screens">

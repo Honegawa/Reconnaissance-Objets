@@ -46,14 +46,26 @@ main {
 .detection-container {
   flex: 1;
   text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .video-container video,
-.detection-container canvas,
-.detection-container img {
+.video-container canvas,
+.detection-container canvas {
   width: 320px;
   height: 240px;
   background-color: #000;
+}
+
+#detection-video-canva {
+  background-color: rgba(0, 0, 0, 0);
+  position: absolute;
+  bottom: 0;
+  margin-bottom: 7px;
+  z-index: 100;
 }
 
 .log {
@@ -61,7 +73,7 @@ main {
   flex-direction: column;
   background-color: #fff;
   height: 400px;
-  width: 50%;
+  width: 700px;
 }
 
 .galery .log h2 {
@@ -73,7 +85,7 @@ main {
   flex-direction: column;
   background-color: #fff;
   height: 400px;
-  width: 50%;
+  width: 700px;
 }
 
 #log-console {
@@ -119,7 +131,7 @@ main {
 
 .log-galerie {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
 }
 
