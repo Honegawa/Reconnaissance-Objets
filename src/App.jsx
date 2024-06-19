@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-import Db  from "./db";
+import Db from "./db";
 
 // TensorFlow
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
@@ -21,16 +21,14 @@ function App() {
   const [deviceSelect, setDeviceSelect] = useState();
   const [currentDevice, setCurrentDevice] = useState();
   const [model, setModel] = useState(null);
-  const [gallery, setGallery] = useState([]);
-  const [imagesSrc, setImagesSrc] = useState([]);
-
+  const [imageURLS, setImageURLS] = useState([]);
 
   // Charge les cameras de l'utilisateur
   useEffect(() => {
-    Db.dbInit()
     getUserFlux();
+    loadDb();
+    loadImages();
     loadModel();
-    CreateGallery();
   }, []);
 
   // Genere les options pour la selection des cameras
@@ -56,6 +54,23 @@ function App() {
         </option>
       ))
     );
+
+  const loadDb = async () => {
+    await Db.dbInit();
+    const gallery = await Db.dbRead();
+
+    loadImages(gallery);
+  };
+
+  const loadImages = (gallery) => {
+    if (gallery) {
+      const imagePromises = gallery.map((element) =>
+        new Response(element.image).text()
+      );
+
+      Promise.all(imagePromises).then((value) => setImageURLS(value));
+    }
+  };
 
   const startup = async () => {
     try {
@@ -110,8 +125,14 @@ function App() {
     const data = imgCanvasRef.current.toDataURL("image/png");
     image.setAttribute("src", data);
     imageToStore.setAttribute("src", data);
-    image.addEventListener("load", async () => detectFromImageFrame(context, imgCanvasRef.current));
-    imageToStore.addEventListener("load", async () => createStoredImage(await model.detect(imageToStore).then((predictions) => predictions)))
+    image.addEventListener("load", async () =>
+      detectFromImageFrame(context, imgCanvasRef.current)
+    );
+    imageToStore.addEventListener("load", async () =>
+      createStoredImage(
+        await model.detect(imageToStore).then((predictions) => predictions)
+      )
+    );
   };
 
   const detectFromImageFrame = async (context, image) => {
@@ -127,14 +148,19 @@ function App() {
       vidCanvasRef.current.height = video.videoHeight;
 
       context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-      context.drawImage(videoRef.current, 0, 0, video.videoWidth, video.videoHeight);
+      context.drawImage(
+        videoRef.current,
+        0,
+        0,
+        video.videoWidth,
+        video.videoHeight
+      );
       showDetections(context, predictions, "video");
-      
+
       requestAnimationFrame(() => {
         detectFromVideoFrame(context, video);
       });
     });
-
   };
 
   const showDetections = (context, predictions, log) => {
@@ -159,30 +185,24 @@ function App() {
 
   const createStoredImage = (predictions) => {
     const occurences = {};
-    predictions.map(prediction => {
-      prediction.class in occurences ?  occurences[prediction.class] += 1 : occurences[prediction.class] = 1
-    })
-    const blob = new Blob([imgCanvasRef.current.toDataURL()], {type: "text/plain"})
+    predictions.map((prediction) => {
+      prediction.class in occurences
+        ? (occurences[prediction.class] += 1)
+        : (occurences[prediction.class] = 1);
+    });
+
+    const dataImage = imgCanvasRef.current.toDataURL();
+    const blob = new Blob([dataImage], {
+      type: "image/png",
+    });
     const date = new Date(Date.now()).toISOString();
-    Db.dbAdd({image:blob, timestamp: date, occurences: occurences});
-    CreateGallery()
-  }
 
-  const CreateGallery = () => {
-    try {
-      document.querySelector(".last-screens").innerHTML = "";
-      setGallery([])
-      setGallery([...Db.getGallery()])
-      gallery.map( async (element) => {
-        const imageSrc = await new Response(element.image).text();
-        imagesSrc.push(imageSrc)
-      })
-    } catch (e) {
-      console.log(e.message);
-    }
-  }
+    const newImage = { image: blob, timestamp: date, occurences: occurences };
+    Db.dbAdd(newImage);
 
-    
+    setImageURLS((prev) => [...prev, dataImage]);
+  };
+
   return (
     <>
       <header>
@@ -256,15 +276,13 @@ function App() {
             <div id="log-console">{/* <!-- Les  Loggg  --> */}</div>
           </div>
           <div className="galery">
-            <h2>Galerie({gallery.length !== 0 ? gallery.length : 0})</h2>
+            <h2>Galerie({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
             <div className="last-screens">
-              {
-              gallery &&
-              imagesSrc.map((image, index) => (
-              <div key={index} className="image-gallery-container">
-                <img className="gallery-image" src={image} />
-              </div>))
-            }
+              {imageURLS.map((img, index) => (
+                <div key={index} className="image-gallery-container">
+                  <img className="gallery-image" src={img} />
+                </div>
+              ))}
             </div>
           </div>
         </section>
