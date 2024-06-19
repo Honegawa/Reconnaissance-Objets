@@ -5,7 +5,21 @@
 }
 
 main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
   padding: 20px;
+  box-sizing: border-box;
+}
+
+.detection-panel {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  align-items: baseline;
 }
 
 .image-gallery-container {
@@ -20,10 +34,10 @@ main {
 
 .controls {
   display: flex;
-  align-items: center;
-  justify-content: space-around;
+  flex-direction: column;
+  align-items: top;
+  justify-content: center;
   gap: 10px;
-  margin-bottom: 20px;
 }
 
 .controls label {
@@ -36,10 +50,17 @@ main {
   font-size: 16px;
 }
 
+.cam {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
 .canvases {
   display: flex;
-  justify-content: space-around;
-  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .video-container,
@@ -72,8 +93,8 @@ main {
   display: flex;
   flex-direction: column;
   background-color: #fff;
-  height: 400px;
-  width: 700px;
+  width: 600px;
+  height: 450px;
 }
 
 .galery .log h2 {
@@ -84,8 +105,8 @@ main {
   display: flex;
   flex-direction: column;
   background-color: #fff;
-  height: 400px;
-  width: 700px;
+  width: 600px;
+  height: 450px;
 }
 
 #log-console {
@@ -104,7 +125,6 @@ main {
   border-radius: 3px;
   border-collapse: collapse;
 }
-
 
 #log-console thead th {
   position: sticky;
@@ -131,6 +151,7 @@ main {
 
 .log-galerie {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
 }
@@ -151,7 +172,6 @@ main {
   border: none;
   font-size: 24px;
   color: white;
-  margin-bottom: 19px;
 }
 
 .screen-button:hover {
@@ -177,4 +197,29 @@ main {
 
 .img_scren {
   width: 100%;
+}
+
+.capture {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.capture fieldset {
+  width: fit-content;
+  font-weight: 600;
+}
+
+#filter-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 600px;
+  height: 210px;
+  column-gap: 6px;
+  overflow-y: scroll;
+}
+
+#filter-list div {
+  text-align: left;
 }
