@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 
 import Db from "./db";
+import { CLASSES } from "./utils/constants/coco-ssd.js";
 
 // TensorFlow
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
@@ -17,11 +18,12 @@ function App() {
   const width = 1280;
   const height = 720;
 
-  let interval;
+  const interval = useRef();
 
   const [userDevices, setUserDevices] = useState([]);
   const [currentDevice, setCurrentDevice] = useState();
   const [model, setModel] = useState(null);
+  const [classFilter, setClassFilter] = useState([]);
   const [logDetections, setLogDetections] = useState([]);
   const [imageURLS, setImageURLS] = useState([]);
 
@@ -31,7 +33,18 @@ function App() {
     loadDb();
     loadImages();
     loadModel();
+
+    return () => clearInterval(interval.current);
   }, []);
+
+  // Start/stop detection when classFilter is changed
+  useEffect(() => {
+    if (currentDevice) {
+      resetDetection();
+
+      initDetection();
+    }
+  }, [classFilter]);
 
   const getUserFlux = async () => {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -60,10 +73,24 @@ function App() {
     setModel(model);
   };
 
+  const initDetection = () => {
+    interval.current = setInterval(() => {
+      detectFromVideo(model);
+      console.log("show detect", classFilter);
+    }, 1000);
+  };
+
+  const resetDetection = () => {
+    const context = vidDetectionRef.current.getContext("2d");
+
+    clearInterval(interval.current);
+    interval.current = null;
+
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  };
+
   const handleCamChange = async (event) => {
-    if (interval) {
-      clearInterval(interval);
-    }
+    resetDetection();
 
     try {
       let stream;
@@ -108,15 +135,25 @@ function App() {
   };
 
   const handleClick = (event) => {
-    event.target.disabled = true;
-    takePicture();
+    if (currentDevice) {
+      event.target.disabled = true;
+      takePicture();
+    }
   };
 
   const handleCanPlayVideo = () => {
-    if (currentDevice && !interval) {
-      interval = setInterval(() => {
-        detectFromVideo(model);
-      }, 1000);
+    if (currentDevice && !interval.current) {
+      initDetection();
+    }
+  };
+
+  const handleFilterChange = (event) => {
+    const { id } = event.target;
+
+    if (classFilter.includes(id)) {
+      setClassFilter(classFilter.filter((c) => c !== id));
+    } else {
+      setClassFilter((prev) => [...prev, id]);
     }
   };
 
@@ -152,11 +189,13 @@ function App() {
       const date = new Date(Date.now()).toISOString();
 
       const occurences = {};
-      predictions.map((prediction) => {
-        prediction.class in occurences
-          ? (occurences[prediction.class] += 1)
-          : (occurences[prediction.class] = 1);
-      });
+      predictions
+        .filter((prediction) => !classFilter.includes(prediction.class))
+        .map((prediction) => {
+          prediction.class in occurences
+            ? (occurences[prediction.class] += 1)
+            : (occurences[prediction.class] = 1);
+        });
 
       const newDetection = { timestamp: date, occurences: occurences };
 
@@ -185,28 +224,32 @@ function App() {
     const color = "red";
     context.font = "bold 36px Arial";
 
-    predictions.forEach((pred) => {
-      context.beginPath();
-      context.rect(...pred.bbox);
-      context.lineWidth = 6;
-      context.strokeStyle = color;
-      context.fillStyle = color;
-      context.stroke();
-      context.fillText(
-        `${pred.score.toFixed(3)} ${pred.class}`,
-        pred.bbox[0] + 20,
-        pred.bbox[1] + 36
-      );
-    });
+    predictions
+      .filter((pred) => !classFilter.includes(pred.class))
+      .forEach((pred) => {
+        context.beginPath();
+        context.rect(...pred.bbox);
+        context.lineWidth = 6;
+        context.strokeStyle = color;
+        context.fillStyle = color;
+        context.stroke();
+        context.fillText(
+          `${pred.score.toFixed(3)} ${pred.class}`,
+          pred.bbox[0] + 20,
+          pred.bbox[1] + 36
+        );
+      });
   };
 
   const createStoredImage = (predictions) => {
     const occurences = {};
-    predictions.map((prediction) => {
-      prediction.class in occurences
-        ? (occurences[prediction.class] += 1)
-        : (occurences[prediction.class] = 1);
-    });
+    predictions
+      .filter((prediction) => !classFilter.includes(prediction.class))
+      .map((prediction) => {
+        prediction.class in occurences
+          ? (occurences[prediction.class] += 1)
+          : (occurences[prediction.class] = 1);
+      });
 
     const dataImage = imgCanvasRef.current.toDataURL();
     const blob = new Blob([dataImage], {
@@ -233,60 +276,84 @@ function App() {
           </section>
         ) : (
           <>
-            <section className="canvases">
-              <div className="video-container">
-                <h2>Vidéos en temps Réel</h2>
-                <video
-                  preload="none"
-                  id="video"
-                  onCanPlay={handleCanPlayVideo}
-                  ref={videoRef}
-                />
-                <canvas
-                  id="detection-video-canva"
-                  ref={vidDetectionRef}
-                ></canvas>
-              </div>
-              <div className="detection-container">
-                <h2>Détection de la capture d&apos;image</h2>
-                <div>
-                  <canvas ref={imgCanvasRef}> </canvas>
+            <div className="detection-panel">
+              <section className="cam">
+                <div className="canvases">
+                  <div className="video-container">
+                    <h2>Vidéos en temps Réel</h2>
+                    <video
+                      preload="none"
+                      id="video"
+                      onCanPlay={handleCanPlayVideo}
+                      ref={videoRef}
+                    />
+                    <canvas
+                      id="detection-video-canva"
+                      ref={vidDetectionRef}
+                    ></canvas>
+                  </div>
+                  <div className="detection-container">
+                    <h2>Capture d&apos;image</h2>
+                    <div>
+                      <canvas ref={imgCanvasRef}> </canvas>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </section>
 
-            <section className="controls">
-              <div className="choix_camera">
-                <label htmlFor="camera-select">Choix de la caméra: </label>
-                <select
-                  name="camera"
-                  id="camera-select"
-                  onChange={handleCamChange}
+                <button
+                  className="screen-button"
+                  id="screenshot-button"
+                  onClick={handleClick}
+                  ref={buttonRef}
                 >
-                  <option value="" hidden>
-                    Selectionner une caméra
-                  </option>
-                  {userDevices.map((device, index) => (
-                    <option
-                      key={index}
-                      id={device.deviceId}
-                      value={device.deviceId}
-                    >
-                      {device.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </section>
+                  Capture
+                </button>
+              </section>
 
-            <button
-              className="screen-button"
-              id="screenshot-button"
-              onClick={handleClick}
-              ref={buttonRef}
-            >
-              Capture
-            </button>
+              <section className="controls">
+                <div className="choix_camera">
+                  <label htmlFor="camera-select">Choix de la caméra: </label>
+                  <select
+                    name="camera"
+                    id="camera-select"
+                    onChange={handleCamChange}
+                  >
+                    <option value="" hidden>
+                      Selectionner une caméra
+                    </option>
+                    {userDevices.map((device, index) => (
+                      <option
+                        key={index}
+                        id={device.deviceId}
+                        value={device.deviceId}
+                      >
+                        {device.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="capture">
+                  <fieldset>
+                    <legend>Filtre d&apos;objets</legend>
+                    <div id="filter-list">
+                      {CLASSES.map((c) => (
+                        <div key={c}>
+                          <input
+                            type="checkbox"
+                            id={c}
+                            name="filter"
+                            onChange={handleFilterChange}
+                            checked={classFilter.includes(c)}
+                          />
+                          <label htmlFor={c}>{c}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </fieldset>
+                </div>
+              </section>
+            </div>
           </>
         )}
 
@@ -306,19 +373,26 @@ function App() {
                   {logDetections.map((detection) => (
                     <Fragment key={detection.timestamp}>
                       <tr>
-                        <td rowSpan={Object.keys(detection.occurences).length}>
+                        <td rowSpan={Object.keys(detection.occurences).length ? Object.keys(detection.occurences).length: 1}>
                           {`${new Date(
                             detection.timestamp
                           ).toLocaleTimeString()} ${new Date(
                             detection.timestamp
                           ).toLocaleDateString()}`}
                         </td>
-                        {Object.entries(detection.occurences)[0].map(
-                          (entry) => (
-                            <td key={`${detection.timestamp}-${entry}`}>
-                              {entry}
-                            </td>
+                        {Object.entries(detection.occurences)[0] ? (
+                          Object.entries(detection.occurences)[0].map(
+                            (entry) => (
+                              <td key={`${detection.timestamp}-${entry}`}>
+                                {entry}
+                              </td>
+                            )
                           )
+                        ) : (
+                          <>
+                            <td></td>
+                            <td></td>
+                          </>
                         )}
                       </tr>
                       {Object.entries(detection.occurences).length > 1 &&
