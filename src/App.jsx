@@ -9,6 +9,7 @@ import "@tensorflow/tfjs";
 
 // CSS
 import "./App.css";
+import ToggleButton from "./components/ToggleButton.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -76,7 +77,6 @@ function App() {
   const initDetection = () => {
     interval.current = setInterval(() => {
       detectFromVideo(model);
-      console.log("show detect", classFilter);
     }, 1000);
   };
 
@@ -265,8 +265,9 @@ function App() {
 
   return (
     <>
-      <header>
+      <header id="header">
         <h1>Reconnaissance objets</h1>
+        <ToggleButton/>
       </header>
 
       <main>
@@ -373,7 +374,13 @@ function App() {
                   {logDetections.map((detection) => (
                     <Fragment key={detection.timestamp}>
                       <tr>
-                        <td rowSpan={Object.keys(detection.occurences).length ? Object.keys(detection.occurences).length: 1}>
+                        <td
+                          rowSpan={
+                            Object.keys(detection.occurences).length
+                              ? Object.keys(detection.occurences).length
+                              : 1
+                          }
+                        >
                           {`${new Date(
                             detection.timestamp
                           ).toLocaleTimeString()} ${new Date(
