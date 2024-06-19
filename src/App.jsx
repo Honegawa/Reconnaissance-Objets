@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
+import Db from "./db";
+
 // TensorFlow
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
@@ -19,10 +21,13 @@ function App() {
   const [deviceSelect, setDeviceSelect] = useState();
   const [currentDevice, setCurrentDevice] = useState();
   const [model, setModel] = useState(null);
+  const [imageURLS, setImageURLS] = useState([]);
 
   // Charge les cameras de l'utilisateur
   useEffect(() => {
     getUserFlux();
+    loadDb();
+    loadImages();
     loadModel();
   }, []);
 
@@ -49,6 +54,23 @@ function App() {
         </option>
       ))
     );
+
+  const loadDb = async () => {
+    await Db.dbInit();
+    const gallery = await Db.dbRead();
+
+    loadImages(gallery);
+  };
+
+  const loadImages = (gallery) => {
+    if (gallery) {
+      const imagePromises = gallery.map((element) =>
+        new Response(element.image).text()
+      );
+
+      Promise.all(imagePromises).then((value) => setImageURLS(value));
+    }
+  };
 
   const startup = async () => {
     try {
@@ -91,6 +113,7 @@ function App() {
 
   const takePicture = () => {
     const image = new Image();
+    const imageToStore = new Image();
 
     const context = imgCanvasRef.current.getContext("2d");
 
@@ -101,8 +124,14 @@ function App() {
 
     const data = imgCanvasRef.current.toDataURL("image/png");
     image.setAttribute("src", data);
+    imageToStore.setAttribute("src", data);
     image.addEventListener("load", async () =>
       detectFromImageFrame(context, imgCanvasRef.current)
+    );
+    imageToStore.addEventListener("load", async () =>
+      createStoredImage(
+        await model.detect(imageToStore).then((predictions) => predictions)
+      )
     );
   };
 
@@ -119,22 +148,26 @@ function App() {
       vidCanvasRef.current.height = video.videoHeight;
 
       context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-      context.drawImage(videoRef.current, 0, 0, video.videoWidth, video.videoHeight);
+      context.drawImage(
+        videoRef.current,
+        0,
+        0,
+        video.videoWidth,
+        video.videoHeight
+      );
       showDetections(context, predictions, "video");
-      
+
       requestAnimationFrame(() => {
         detectFromVideoFrame(context, video);
       });
     });
-
   };
 
   const showDetections = (context, predictions, log) => {
     const color = "red";
     context.font = "bold 36px Arial";
 
-    console.log(log,"Predictions: ", predictions);
-
+    // console.log(log,"Predictions: ", predictions);
     predictions.forEach((pred) => {
       context.beginPath();
       context.rect(...pred.bbox);
@@ -148,6 +181,26 @@ function App() {
         pred.bbox[1] + 36
       );
     });
+  };
+
+  const createStoredImage = (predictions) => {
+    const occurences = {};
+    predictions.map((prediction) => {
+      prediction.class in occurences
+        ? (occurences[prediction.class] += 1)
+        : (occurences[prediction.class] = 1);
+    });
+
+    const dataImage = imgCanvasRef.current.toDataURL();
+    const blob = new Blob([dataImage], {
+      type: "image/png",
+    });
+    const date = new Date(Date.now()).toISOString();
+
+    const newImage = { image: blob, timestamp: date, occurences: occurences };
+    Db.dbAdd(newImage);
+
+    setImageURLS((prev) => [...prev, dataImage]);
   };
 
   return (
@@ -223,8 +276,14 @@ function App() {
             <div id="log-console">{/* <!-- Les  Loggg  --> */}</div>
           </div>
           <div className="galery">
-            <h2>Galerie</h2>
-            <div className="last-screens">{/* Les dérniers élements  */}</div>
+            <h2>Galerie({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
+            <div className="last-screens">
+              {imageURLS.map((img, index) => (
+                <div key={index} className="image-gallery-container">
+                  <img className="gallery-image" src={img} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </main>

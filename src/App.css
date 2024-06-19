@@ -8,6 +8,17 @@ main {
   padding: 20px;
 }
 
+.image-gallery-container{
+  object-fit: contain;
+}
+
+.gallery-image{
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+}
+
+
 .controls {
   display: flex;
   align-items: center;
@@ -43,34 +54,33 @@ main {
 .detection-container img {
   width: 320px;
   height: 240px;
-  /* La video */
   background-color: #000;
 }
 
 .log {
+  display: flex;
+  flex-direction: column;
   background-color: #fff;
-  /* padding: 10px; */
-  height: 50%;
+  height: 400px;
   width: 50%;
-  /* position: relative; */
 }
 
 .galery .log  h2 {
   margin-top: 0;
-  /* position: fixed; */
 }
 
 .galery {
+  display: flex;
+  flex-direction: column;
   background-color: #fff;
-  height: 50%;
+  height: 400px;
   width: 50%;
 }
 
 #log-console {
   font-family: monospace;
   white-space: pre-wrap;
-  height: 200px;
-  /* position: relative; */
+  flex: 1;
   overflow-y: scroll;
   padding: 0px 10px 10px 10px;
   box-sizing: border-box;
@@ -80,8 +90,7 @@ main {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  /* overflow-y: scroll; */
-}
+ }
 
 .screen-button {
   transition: all 0.3s ease-in-out;
@@ -113,12 +122,13 @@ main {
 
 .last-screens {
   font-family: monospace;
+  flex: 1;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
+  grid-auto-rows: 100px;
   grid-gap: 10px;
   padding: 0px 10px 10px 10px;
   box-sizing: border-box;
-  height: 200px;
   overflow-y: scroll;
 }
 
