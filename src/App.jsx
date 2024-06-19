@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
+import Db  from "./db";
+
 // TensorFlow
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
@@ -19,11 +21,16 @@ function App() {
   const [deviceSelect, setDeviceSelect] = useState();
   const [currentDevice, setCurrentDevice] = useState();
   const [model, setModel] = useState(null);
+  const [gallery, setGallery] = useState([]);
+  const [imagesSrc, setImagesSrc] = useState([]);
+
 
   // Charge les cameras de l'utilisateur
   useEffect(() => {
+    Db.dbInit()
     getUserFlux();
     loadModel();
+    CreateGallery();
   }, []);
 
   // Genere les options pour la selection des cameras
@@ -91,6 +98,7 @@ function App() {
 
   const takePicture = () => {
     const image = new Image();
+    const imageToStore = new Image();
 
     const context = imgCanvasRef.current.getContext("2d");
 
@@ -101,9 +109,9 @@ function App() {
 
     const data = imgCanvasRef.current.toDataURL("image/png");
     image.setAttribute("src", data);
-    image.addEventListener("load", async () =>
-      detectFromImageFrame(context, imgCanvasRef.current)
-    );
+    imageToStore.setAttribute("src", data);
+    image.addEventListener("load", async () => detectFromImageFrame(context, imgCanvasRef.current));
+    imageToStore.addEventListener("load", async () => createStoredImage(await model.detect(imageToStore).then((predictions) => predictions)))
   };
 
   const detectFromImageFrame = async (context, image) => {
@@ -133,8 +141,7 @@ function App() {
     const color = "red";
     context.font = "bold 36px Arial";
 
-    console.log(log,"Predictions: ", predictions);
-
+    // console.log(log,"Predictions: ", predictions);
     predictions.forEach((pred) => {
       context.beginPath();
       context.rect(...pred.bbox);
@@ -150,6 +157,32 @@ function App() {
     });
   };
 
+  const createStoredImage = (predictions) => {
+    const occurences = {};
+    predictions.map(prediction => {
+      prediction.class in occurences ?  occurences[prediction.class] += 1 : occurences[prediction.class] = 1
+    })
+    const blob = new Blob([imgCanvasRef.current.toDataURL()], {type: "text/plain"})
+    const date = new Date(Date.now()).toISOString();
+    Db.dbAdd({image:blob, timestamp: date, occurences: occurences});
+    CreateGallery()
+  }
+
+  const CreateGallery = () => {
+    try {
+      document.querySelector(".last-screens").innerHTML = "";
+      setGallery([])
+      setGallery([...Db.getGallery()])
+      gallery.map( async (element) => {
+        const imageSrc = await new Response(element.image).text();
+        imagesSrc.push(imageSrc)
+      })
+    } catch (e) {
+      console.log(e.message);
+    }
+  }
+
+    
   return (
     <>
       <header>
@@ -223,8 +256,16 @@ function App() {
             <div id="log-console">{/* <!-- Les  Loggg  --> */}</div>
           </div>
           <div className="galery">
-            <h2>Galerie</h2>
-            <div className="last-screens">{/* Les dérniers élements  */}</div>
+            <h2>Galerie({gallery.length !== 0 ? gallery.length : 0})</h2>
+            <div className="last-screens">
+              {
+              gallery &&
+              imagesSrc.map((image, index) => (
+              <div key={index} className="image-gallery-container">
+                <img className="gallery-image" src={image} />
+              </div>))
+            }
+            </div>
           </div>
         </section>
       </main>
