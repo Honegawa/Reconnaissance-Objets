@@ -8,16 +8,15 @@ main {
   padding: 20px;
 }
 
-.image-gallery-container{
+.image-gallery-container {
   object-fit: contain;
 }
 
-.gallery-image{
+.gallery-image {
   width: 100%;
   height: 100%;
   border-radius: 5px;
 }
-
 
 .controls {
   display: flex;
@@ -65,7 +64,7 @@ main {
   width: 50%;
 }
 
-.galery .log  h2 {
+.galery .log h2 {
   margin-top: 0;
 }
 
@@ -86,11 +85,43 @@ main {
   box-sizing: border-box;
 }
 
+#log-console table {
+  width: 100%;
+  font-size: 16px;
+  background-color: white;
+  border-radius: 3px;
+  border-collapse: collapse;
+}
+
+
+#log-console thead th {
+  position: sticky;
+  top: 0;
+  padding: 10px;
+  background-color: #1b1e24;
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+#log-console tbody tr td {
+  border: gray 1px solid;
+}
+
+#table-date {
+  width: 150px;
+}
+
+#table-occurence {
+  width: 150px;
+}
+
 .log-galerie {
   display: flex;
   justify-content: space-between;
   gap: 10px;
- }
+}
 
 .screen-button {
   transition: all 0.3s ease-in-out;

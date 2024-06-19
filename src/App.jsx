@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 
 import Db from "./db";
 
@@ -18,12 +18,10 @@ function App() {
   const height = 720;
 
   const [userDevices, setUserDevices] = useState([]);
-
-  const [tabScreen, setTabScreen] = useState([]);
-
   const [deviceSelect, setDeviceSelect] = useState();
   const [currentDevice, setCurrentDevice] = useState();
   const [model, setModel] = useState(null);
+  const [logDetections, setLogDetections] = useState([]);
   const [imageURLS, setImageURLS] = useState([]);
 
   // Charge les cameras de l'utilisateur
@@ -60,14 +58,14 @@ function App() {
 
   const loadDb = async () => {
     await Db.dbInit();
-    const gallery = await Db.dbRead();
+    const detections = await Db.dbRead();
 
-    loadImages(gallery);
+    loadImages(detections);
   };
 
-  const loadImages = (gallery) => {
-    if (gallery) {
-      const imagePromises = gallery.map((element) =>
+  const loadImages = (detections) => {
+    if (detections) {
+      const imagePromises = detections.map((element) =>
         new Response(element.image).text()
       );
 
@@ -140,26 +138,21 @@ function App() {
 
   const detectFromImageFrame = async (context, image) => {
     await model.detect(image).then((predictions) => {
-      // console.log("Image Predictions: ", predictions); // L'image screen !!!!!!
-      // console.log("Image Predictions: ", predictions[0].class);
       showDetections(context, predictions, "image");
       buttonRef.current.disabled = false;
 
-      const date = new Date(Date.now());
-      const localDate = date.toLocaleDateString();
-      const localTime = date.toLocaleTimeString();
+      const date = new Date(Date.now()).toISOString();
 
-      const screenClasses = predictions.map((prediction) => {
-        return {
-          class: prediction.class,
-          dateTime: `${localDate} à ${localTime}`,
-        };
+      const occurences = {};
+      predictions.map((prediction) => {
+        prediction.class in occurences
+          ? (occurences[prediction.class] += 1)
+          : (occurences[prediction.class] = 1);
       });
-      setTabScreen((prev) => [...prev, ...screenClasses]);
-      // console.log(`table des screen : ${tabScreen}`);
 
-      // const timestamp = Date.now();
-      // const dates = new Date(timestamp).toDateString();
+      const newDetection = { timestamp: date, occurences: occurences };
+
+      setLogDetections((prev) => [...prev, newDetection]);
     });
   };
 
@@ -293,18 +286,52 @@ function App() {
 
         <section className="log-galerie">
           <div className="log">
-            <h2>Log des Captures</h2>
+            <h2>Logs des Captures</h2>
             <div id="log-console">
-              {/* <!-- Les  Loggg  --> */}
-              {tabScreen.map((screen, index) => (
-                <li key={index}>
-                  On a détecté un(e) {screen.class} le {screen.dateTime}
-                </li>
-              ))}
+              <table>
+                <thead>
+                  <tr>
+                    <th id="table-date">Date</th>
+                    <th>Objet</th>
+                    <th id="table-occurence">Occurences</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logDetections.map((detection) => (
+                    <Fragment key={detection.timestamp}>
+                      <tr>
+                        <td rowSpan={Object.keys(detection.occurences).length}>
+                          {`${new Date(
+                            detection.timestamp
+                          ).toLocaleTimeString()} ${new Date(
+                            detection.timestamp
+                          ).toLocaleDateString()}`}
+                        </td>
+                        {Object.entries(detection.occurences)[0].map(
+                          (entry) => (
+                            <td key={`${detection.timestamp}-${entry}`}>
+                              {entry}
+                            </td>
+                          )
+                        )}
+                      </tr>
+                      {Object.entries(detection.occurences).length > 1 &&
+                        Object.entries(detection.occurences)
+                          .slice(1)
+                          .map((entry) => (
+                            <tr key={`${detection.timestamp}-${entry[0]}`}>
+                              <td>{entry[0]}</td>
+                              <td>{entry[1]}</td>
+                            </tr>
+                          ))}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
           <div className="galery">
-            <h2>Galerie({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
+            <h2>Galerie ({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
             <div className="last-screens">
               {imageURLS.map((img, index) => (
                 <div key={index} className="image-gallery-container">
