@@ -3,7 +3,7 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* color-scheme: light dark; */
+  color-scheme: light dark;
   /* color: rgba(255, 255, 255, 0.87); */
   /* background-color: #242424; */
 
@@ -13,10 +13,32 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.light {
+  --clr-bg: #fcfcfc;
+  --clr-grad-1: #fff;
+  --clr-grad-2 : #2a2f4c;
+  --clr-bg-alt: #fff;
+  --clr-fg: #555;
+  --clr-fg-alt: #444;
+  --clr-table: #23283e; 
+  --shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+
+.dark {
+  --clr-bg: #23283e;
+  --clr-grad-1 : #2a2f4c;
+  --clr-grad-2: #fff;
+  --clr-bg-alt: #2a2f4c;
+  --clr-fg: #bdbddd;
+  --clr-fg-alt: #cdcdff;
+  --clr-table: #fcfcfc; 
+  --shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
+}
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: linear-gradient(185deg, rgba(255,255,255,1) 0%, rgba(0,0,0,0.6012998949579832) 100%);
+  background: linear-gradient(185deg, var(--clr-grad-1) 0%, var(--clr-grad-2) 100%);
   min-height: 100vh;
 }

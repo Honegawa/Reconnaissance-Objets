@@ -13,6 +13,14 @@ main {
   box-sizing: border-box;
 }
 
+#header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  color: var(--clr-fg);
+}
+
 .detection-panel {
   display: flex;
   flex-direction: row;
@@ -20,6 +28,7 @@ main {
   gap: 20px;
   justify-content: center;
   align-items: baseline;
+  color: var(--clr-fg);
 }
 
 .image-gallery-container {
@@ -48,6 +57,7 @@ main {
 .controls button {
   padding: 5px 10px;
   font-size: 16px;
+  color: var(--clr-fg);
 }
 
 .cam {
@@ -92,7 +102,7 @@ main {
 .log {
   display: flex;
   flex-direction: column;
-  background-color: #fff;
+  background-color: var(--clr-bg);
   width: 600px;
   height: 450px;
 }
@@ -104,7 +114,7 @@ main {
 .galery {
   display: flex;
   flex-direction: column;
-  background-color: #fff;
+  background-color: var(--clr-bg);
   width: 600px;
   height: 450px;
 }
@@ -121,17 +131,19 @@ main {
 #log-console table {
   width: 100%;
   font-size: 16px;
-  background-color: white;
   border-radius: 3px;
   border-collapse: collapse;
 }
 
-#log-console thead th {
+#log-console thead {
   position: sticky;
   top: 0;
+}
+
+#log-console thead th {
   padding: 10px;
-  background-color: #1b1e24;
-  color: white;
+  background-color: var(--clr-table);
+  color: var(--clr-bg);
   font-size: 20px;
   font-weight: 600;
   box-sizing: border-box;
@@ -139,6 +151,7 @@ main {
 
 #log-console tbody tr td {
   border: gray 1px solid;
+  color: var(--clr-fg);
 }
 
 #table-date {
@@ -154,6 +167,7 @@ main {
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+  color: var(--clr-fg);
 }
 
 .screen-button {
