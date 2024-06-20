@@ -62,38 +62,6 @@ button {
   align-items: center;
 }
 
-.canvases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.video-container,
-.detection-container {
-  flex: 1;
-  text-align: center;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.video-container video,
-.video-container canvas,
-.detection-container canvas {
-  width: 320px;
-  height: 240px;
-  background-color: #000;
-}
-
-#detection-video-canva {
-  background-color: rgba(0, 0, 0, 0);
-  position: absolute;
-  bottom: 0;
-  margin-bottom: 7px;
-  z-index: 100;
-}
-
 .log-galerie {
   display: flex;
   flex-wrap: wrap;
@@ -132,8 +100,4 @@ button {
 .screen-button:disabled {
   background-image: linear-gradient(135deg, #828282 0%, #484646 100%);
   box-shadow: none;
-}
-
-.img_scren {
-  width: 100%;
 }

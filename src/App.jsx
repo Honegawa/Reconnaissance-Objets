@@ -15,6 +15,7 @@ import { Gallery } from "./components/Gallery.jsx";
 import { Logs } from "./components/Logs.jsx";
 import { ClassFilter } from "./components/ClassFilter.jsx";
 import { CameraSelect } from "./components/CameraSelect.jsx";
+import { Canvases } from "./components/Canvases.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -313,28 +314,12 @@ function App() {
           <>
             <div className="detection-panel">
               <section className="cam">
-                <div className="canvases">
-                  <div className="video-container">
-                    <h2>Vidéos en temps Réel</h2>
-                    <video
-                      preload="none"
-                      id="video"
-                      onCanPlay={handleCanPlayVideo}
-                      ref={videoRef}
-                    />
-                    <canvas
-                      id="detection-video-canva"
-                      ref={vidDetectionRef}
-                    ></canvas>
-                  </div>
-
-                  <div className="detection-container">
-                    <h2>Capture d&apos;image</h2>
-                    <div>
-                      <canvas ref={imgCanvasRef}> </canvas>
-                    </div>
-                  </div>
-                </div>
+                <Canvases
+                  imgCanvasRef={imgCanvasRef}
+                  videoRef={videoRef}
+                  vidDetectionRef={vidDetectionRef}
+                  handleCanPlayVideo={handleCanPlayVideo}
+                />
 
                 <div className="buttons">
                   <button
