@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 
-import Db from "./db";
+import Db from "./utils/services/db.jsx";
 import { CLASSES } from "./utils/constants/coco-ssd.js";
 
 // TensorFlow
@@ -8,9 +8,10 @@ import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
 
 // CSS
-import "./App.css";
+import "./styles/App.css";
 import ToggleButton from "./components/ToggleButton.jsx";
 import SendCaptures from "./components/SendCaptures.jsx";
+import { RecordButtonGroup } from "./components/RecordButtonGroup.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -29,6 +30,7 @@ function App() {
   const [logDetections, setLogDetections] = useState([]);
   const [imageURLS, setImageURLS] = useState([]);
   const [attachments, setAttachements] = useState([]);
+  const [isRecording, setIsRecording] = useState(false);
 
   // Charge les cameras de l'utilisateur
   useEffect(() => {
@@ -47,7 +49,7 @@ function App() {
 
       initDetection();
     }
-  }, [classFilter]);
+  }, [classFilter, isRecording]);
 
   const getUserFlux = async () => {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -149,6 +151,10 @@ function App() {
     }
   };
 
+  const handleClickRecord = () => {
+    setIsRecording(!isRecording);
+  };
+
   const handleClickImage = (event) => {
     const { src, id } = event.target;
     const timestamp = id.slice(4);
@@ -205,20 +211,7 @@ function App() {
       showDetections(context, predictions, "image");
       buttonRef.current.disabled = false;
 
-      const date = new Date(Date.now()).toISOString();
-
-      const occurences = {};
-      predictions
-        .filter((prediction) => !classFilter.includes(prediction.class))
-        .map((prediction) => {
-          prediction.class in occurences
-            ? (occurences[prediction.class] += 1)
-            : (occurences[prediction.class] = 1);
-        });
-
-      const newDetection = { timestamp: date, occurences: occurences };
-
-      setLogDetections((prev) => [...prev, newDetection]);
+      createLog(predictions);
     });
   };
 
@@ -235,6 +228,10 @@ function App() {
 
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
         showDetections(context, predictions);
+
+        if (isRecording) {
+          createLog(predictions);
+        }
       });
     }
   };
@@ -282,6 +279,23 @@ function App() {
     setImageURLS((prev) => [...prev, { timestamp: date, url: dataImage }]);
   };
 
+  const createLog = (predictions) => {
+    const date = new Date(Date.now()).toISOString();
+
+    const occurences = {};
+    predictions
+      .filter((prediction) => !classFilter.includes(prediction.class))
+      .map((prediction) => {
+        prediction.class in occurences
+          ? (occurences[prediction.class] += 1)
+          : (occurences[prediction.class] = 1);
+      });
+
+    const newDetection = { timestamp: date, occurences: occurences };
+
+    setLogDetections((prev) => [...prev, newDetection]);
+  };
+
   return (
     <>
       <header id="header">
@@ -312,6 +326,7 @@ function App() {
                       ref={vidDetectionRef}
                     ></canvas>
                   </div>
+
                   <div className="detection-container">
                     <h2>Capture d&apos;image</h2>
                     <div>
@@ -320,15 +335,23 @@ function App() {
                   </div>
                 </div>
 
-                <button
-                  className="screen-button"
-                  id="screenshot-button"
-                  onClick={handleClick}
-                  ref={buttonRef}
-                  disabled={!currentDevice}
-                >
-                  Capture
-                </button>
+                <div className="buttons">
+                  <button
+                    className="screen-button"
+                    id="screenshot-button"
+                    onClick={handleClick}
+                    ref={buttonRef}
+                    disabled={!currentDevice}
+                  >
+                    Capture
+                  </button>
+
+                  <RecordButtonGroup
+                    currentDevice={currentDevice}
+                    handleClickRecord={handleClickRecord}
+                    isRecording={isRecording}
+                  />
+                </div>
               </section>
 
               <section className="controls">
