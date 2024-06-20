@@ -12,6 +12,7 @@ import "./styles/App.css";
 import ToggleButton from "./components/ToggleButton.jsx";
 import SendCaptures from "./components/SendCaptures.jsx";
 import { RecordButtonGroup } from "./components/RecordButtonGroup.jsx";
+import { Gallery } from "./components/Gallery.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -258,14 +259,7 @@ function App() {
   };
 
   const createStoredImage = (predictions) => {
-    const occurences = {};
-    predictions
-      .filter((prediction) => !classFilter.includes(prediction.class))
-      .map((prediction) => {
-        prediction.class in occurences
-          ? (occurences[prediction.class] += 1)
-          : (occurences[prediction.class] = 1);
-      });
+    const occurences = getOccurences(predictions);
 
     const dataImage = imgCanvasRef.current.toDataURL();
     const blob = new Blob([dataImage], {
@@ -282,6 +276,14 @@ function App() {
   const createLog = (predictions) => {
     const date = new Date(Date.now()).toISOString();
 
+    const occurences = getOccurences(predictions);
+
+    const newDetection = { timestamp: date, occurences: occurences };
+
+    setLogDetections((prev) => [...prev, newDetection]);
+  };
+
+  const getOccurences = (predictions) => {
     const occurences = {};
     predictions
       .filter((prediction) => !classFilter.includes(prediction.class))
@@ -290,10 +292,7 @@ function App() {
           ? (occurences[prediction.class] += 1)
           : (occurences[prediction.class] = 1);
       });
-
-    const newDetection = { timestamp: date, occurences: occurences };
-
-    setLogDetections((prev) => [...prev, newDetection]);
+    return occurences;
   };
 
   return (
@@ -460,29 +459,12 @@ function App() {
               </table>
             </div>
           </div>
-
-          <div className="galery">
-            <h2>Galerie ({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
-            <div className="last-screens">
-              {imageURLS.map((img, index) => (
-                <div
-                  key={index}
-                  className={`image-gallery-container ${
-                    attachments.find((a) => a.timestamp === img.timestamp)
-                      ? "selected"
-                      : ""
-                  }`}
-                >
-                  <img
-                    className="gallery-image"
-                    id={`img-${img.timestamp}`}
-                    src={img.url}
-                    onClick={handleClickImage}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          
+          <Gallery
+            attachments={attachments}
+            imageURLS={imageURLS}
+            handleClickImage={handleClickImage}
+          />
         </section>
 
         <section className="mailing">
