@@ -94,58 +94,6 @@ button {
   z-index: 100;
 }
 
-.log {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--clr-bg);
-  width: 600px;
-  height: 450px;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-#log-console {
-  font-family: monospace;
-  white-space: pre-wrap;
-  flex: 1;
-  overflow-y: scroll;
-  margin-bottom: 1px;
-}
-
-#log-console table {
-  width: 100%;
-  font-size: 16px;
-  border-radius: 3px;
-  border-collapse: collapse;
-}
-
-#log-console thead {
-  position: sticky;
-  top: 0;
-}
-
-#log-console thead th {
-  padding: 10px;
-  background-color: var(--clr-table);
-  color: var(--clr-bg);
-  font-size: 20px;
-  font-weight: 600;
-  box-sizing: border-box;
-}
-
-#log-console tbody tr td {
-  border: gray 1px solid;
-  color: var(--clr-fg);
-}
-
-#table-date {
-  width: 150px;
-}
-
-#table-occurence {
-  width: 150px;
-}
-
 .log-galerie {
   display: flex;
   flex-wrap: wrap;
@@ -184,17 +132,6 @@ button {
 .screen-button:disabled {
   background-image: linear-gradient(135deg, #828282 0%, #484646 100%);
   box-shadow: none;
-}
-
-.last-screens {
-  font-family: monospace;
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-auto-rows: 100px;
-  grid-gap: 10px;
-  box-sizing: border-box;
-  overflow-y: scroll;
 }
 
 .img_scren {
