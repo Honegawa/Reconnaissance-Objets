@@ -10,6 +10,7 @@ import "@tensorflow/tfjs";
 // CSS
 import "./App.css";
 import ToggleButton from "./components/ToggleButton.jsx";
+import SendCaptures from "./components/SendCaptures.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -27,6 +28,7 @@ function App() {
   const [classFilter, setClassFilter] = useState([]);
   const [logDetections, setLogDetections] = useState([]);
   const [imageURLS, setImageURLS] = useState([]);
+  const [attachments, setAttachements] = useState([]);
 
   // Charge les cameras de l'utilisateur
   useEffect(() => {
@@ -138,6 +140,16 @@ function App() {
     if (currentDevice) {
       event.target.disabled = true;
       takePicture();
+    }
+  };
+
+  const handleClickImage = (event) => {
+    const { src } = event.target;
+
+    if (attachments.includes(src)) {
+      setAttachements(attachments.filter((a) => a !== src));
+    } else {
+      setAttachements((prev) => [...prev, src]);
     }
   };
 
@@ -267,7 +279,7 @@ function App() {
     <>
       <header id="header">
         <h1>Reconnaissance objets</h1>
-        <ToggleButton/>
+        <ToggleButton />
       </header>
 
       <main>
@@ -422,12 +434,25 @@ function App() {
             <h2>Galerie ({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
             <div className="last-screens">
               {imageURLS.map((img, index) => (
-                <div key={index} className="image-gallery-container">
-                  <img className="gallery-image" src={img} />
+                <div
+                  key={index}
+                  className={`image-gallery-container ${
+                    attachments.includes(img) ? "selected" : ""
+                  }`}
+                >
+                  <img
+                    className="gallery-image"
+                    src={img}
+                    onClick={handleClickImage}
+                  />
                 </div>
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="mailing">
+          <SendCaptures attachments={attachments} />
         </section>
       </main>
     </>

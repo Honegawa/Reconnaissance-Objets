@@ -237,3 +237,7 @@ main {
 #filter-list div {
   text-align: left;
 }
+
+.selected {
+  outline: 2px #0e52bf solid;
+}
