@@ -18,3 +18,4 @@ Le modèle utilisé pour la reconnaissance des objets est COCO-SSD et provient d
 - [Julien DORSAN](https://github.com/Julien-Dorsan)
 - [Feliciano MANDJAM](https://github.com/FelicianoMandjam)
 - [Steven TAING](https://github.com/Honegawa)
+# Reconnaissance_Objet-
