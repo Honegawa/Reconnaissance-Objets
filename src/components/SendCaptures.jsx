@@ -1,4 +1,6 @@
 import emailjs from "@emailjs/browser";
+import EmailLogo from "../assets/email.svg";
+import  "../styles/SendCaptures.css";
 
 export default function SendCaptures({ attachments }) {
   const sendEmail = (event) => {
@@ -6,7 +8,7 @@ export default function SendCaptures({ attachments }) {
 
     const HTMLStringStart = "<div>";
     const HTMLString = attachments
-      .map((a) => `<img style="width: 400px; height: 300px" src="${a}"/>`)
+      .map((a) => `<img style="width: 400px; height: 300px" src="${a.url}"/>`)
       .join();
     const HTMLStringEnd = HTMLStringStart.concat(HTMLString, "</div>");
 
@@ -14,10 +16,10 @@ export default function SendCaptures({ attachments }) {
       my_html: HTMLStringEnd,
     };
 
-    console.log(attachments, templateParams);
-
     emailjs
-      .send("service_e8v4iqm", "template_c2202es", templateParams, {publicKey: "hantp-Q3_fNMiDDIV"})
+      .send("service_e8v4iqm", "template_c2202es", templateParams, {
+        publicKey: "hantp-Q3_fNMiDDIV",
+      })
       .then(() => console.log("Email send"))
       .catch((error) => console.log("Failed to send email", error));
   };
@@ -25,7 +27,9 @@ export default function SendCaptures({ attachments }) {
   return (
     <>
       <form onSubmit={sendEmail}>
-        <button>Envoyer</button>
+        <button id="email-button" disabled={attachments.length < 1}>
+          <img src={EmailLogo} />
+        </button>
       </form>
     </>
   );

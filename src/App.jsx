@@ -67,7 +67,13 @@ function App() {
         new Response(element.image).text()
       );
 
-      Promise.all(imagePromises).then((value) => setImageURLS(value));
+      Promise.all(imagePromises).then((value) =>
+        setImageURLS(
+          detections.map((detection, index) => {
+            return { timestamp: detection.timestamp, url: value[index] };
+          })
+        )
+      );
     }
   };
 
@@ -144,12 +150,13 @@ function App() {
   };
 
   const handleClickImage = (event) => {
-    const { src } = event.target;
+    const { src, id } = event.target;
+    const timestamp = id.slice(4);
 
-    if (attachments.includes(src)) {
-      setAttachements(attachments.filter((a) => a !== src));
+    if (attachments.find((a) => a.timestamp === timestamp)) {
+      setAttachements(attachments.filter((a) => a.timestamp !== timestamp));
     } else {
-      setAttachements((prev) => [...prev, src]);
+      setAttachements((prev) => [...prev, { timestamp: timestamp, url: src }]);
     }
   };
 
@@ -272,7 +279,7 @@ function App() {
     const newImage = { image: blob, timestamp: date, occurences: occurences };
     Db.dbAdd(newImage);
 
-    setImageURLS((prev) => [...prev, dataImage]);
+    setImageURLS((prev) => [...prev, { timestamp: date, url: dataImage }]);
   };
 
   return (
@@ -318,6 +325,7 @@ function App() {
                   id="screenshot-button"
                   onClick={handleClick}
                   ref={buttonRef}
+                  disabled={!currentDevice}
                 >
                   Capture
                 </button>
@@ -437,12 +445,15 @@ function App() {
                 <div
                   key={index}
                   className={`image-gallery-container ${
-                    attachments.includes(img) ? "selected" : ""
+                    attachments.find((a) => a.timestamp === img.timestamp)
+                      ? "selected"
+                      : ""
                   }`}
                 >
                   <img
                     className="gallery-image"
-                    src={img}
+                    id={`img-${img.timestamp}`}
+                    src={img.url}
                     onClick={handleClickImage}
                   />
                 </div>
