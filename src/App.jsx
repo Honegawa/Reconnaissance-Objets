@@ -10,6 +10,7 @@ import "@tensorflow/tfjs";
 // CSS
 import "./App.css";
 import ToggleButton from "./components/ToggleButton.jsx";
+import SendCaptures from "./components/SendCaptures.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -27,6 +28,7 @@ function App() {
   const [classFilter, setClassFilter] = useState([]);
   const [logDetections, setLogDetections] = useState([]);
   const [imageURLS, setImageURLS] = useState([]);
+  const [attachments, setAttachements] = useState([]);
 
   // Charge les cameras de l'utilisateur
   useEffect(() => {
@@ -65,7 +67,13 @@ function App() {
         new Response(element.image).text()
       );
 
-      Promise.all(imagePromises).then((value) => setImageURLS(value));
+      Promise.all(imagePromises).then((value) =>
+        setImageURLS(
+          detections.map((detection, index) => {
+            return { timestamp: detection.timestamp, url: value[index] };
+          })
+        )
+      );
     }
   };
 
@@ -138,6 +146,17 @@ function App() {
     if (currentDevice) {
       event.target.disabled = true;
       takePicture();
+    }
+  };
+
+  const handleClickImage = (event) => {
+    const { src, id } = event.target;
+    const timestamp = id.slice(4);
+
+    if (attachments.find((a) => a.timestamp === timestamp)) {
+      setAttachements(attachments.filter((a) => a.timestamp !== timestamp));
+    } else {
+      setAttachements((prev) => [...prev, { timestamp: timestamp, url: src }]);
     }
   };
 
@@ -260,14 +279,14 @@ function App() {
     const newImage = { image: blob, timestamp: date, occurences: occurences };
     Db.dbAdd(newImage);
 
-    setImageURLS((prev) => [...prev, dataImage]);
+    setImageURLS((prev) => [...prev, { timestamp: date, url: dataImage }]);
   };
 
   return (
     <>
       <header id="header">
         <h1>Reconnaissance objets</h1>
-        <ToggleButton/>
+        <ToggleButton />
       </header>
 
       <main>
@@ -306,6 +325,7 @@ function App() {
                   id="screenshot-button"
                   onClick={handleClick}
                   ref={buttonRef}
+                  disabled={!currentDevice}
                 >
                   Capture
                 </button>
@@ -422,12 +442,28 @@ function App() {
             <h2>Galerie ({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
             <div className="last-screens">
               {imageURLS.map((img, index) => (
-                <div key={index} className="image-gallery-container">
-                  <img className="gallery-image" src={img} />
+                <div
+                  key={index}
+                  className={`image-gallery-container ${
+                    attachments.find((a) => a.timestamp === img.timestamp)
+                      ? "selected"
+                      : ""
+                  }`}
+                >
+                  <img
+                    className="gallery-image"
+                    id={`img-${img.timestamp}`}
+                    src={img.url}
+                    onClick={handleClickImage}
+                  />
                 </div>
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="mailing">
+          <SendCaptures attachments={attachments} />
         </section>
       </main>
     </>
