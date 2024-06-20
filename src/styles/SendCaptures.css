@@ -1,0 +1,30 @@
+#email-button {
+  width: 150px;
+  height: 60px;
+  border-radius: 50px;
+  background-image: linear-gradient(135deg, #feb692 0%, #ea5455 100%);
+  box-shadow: 0 20px 30px -6px rgba(238, 103, 97, 0.5);
+  outline: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease-in-out;
+}
+
+#email-button:hover:not([disabled]) {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+#email-button:active:not([disabled]) {
+  opacity: 0.5;
+}
+
+#email-button:disabled {
+  background-image: linear-gradient(135deg, #828282 0%, #484646 100%);
+  box-shadow: none;
+}
+
+#email-button img {
+  height: 100%;
+  filter: invert(1);
+}

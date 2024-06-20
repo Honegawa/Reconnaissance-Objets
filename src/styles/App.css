@@ -1,0 +1,103 @@
+#root {
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  color: var(--clr-fg);
+}
+
+.detection-panel {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  align-items: baseline;
+  color: var(--clr-fg);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: top;
+  justify-content: center;
+  gap: 10px;
+}
+
+.controls label {
+  font-weight: bold;
+}
+
+.buttons {
+  display: flex;
+  gap: 20px;
+}
+
+select,
+button {
+  padding: 5px 10px;
+  font-size: 16px;
+  color: var(--clr-fg);
+}
+
+.cam {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.log-galerie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  color: var(--clr-fg);
+}
+
+.screen-button {
+  transition: all 0.3s ease-in-out;
+  font-family: "Dosis", sans-serif;
+}
+
+.screen-button {
+  width: 150px;
+  height: 60px;
+  border-radius: 50px;
+  background-image: linear-gradient(135deg, #feb692 0%, #ea5455 100%);
+  box-shadow: 0 20px 30px -6px rgba(238, 103, 97, 0.5);
+  outline: none;
+  cursor: pointer;
+  border: none;
+  font-size: 24px;
+  color: white;
+}
+
+.screen-button:hover:not([disabled]) {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.screen-button:active:not([disabled]) {
+  opacity: 0.5;
+}
+
+.screen-button:disabled {
+  background-image: linear-gradient(135deg, #828282 0%, #484646 100%);
+  box-shadow: none;
+}

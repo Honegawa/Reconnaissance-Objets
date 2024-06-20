@@ -1,0 +1,40 @@
+.galery .log h2 {
+  margin-top: 0;
+}
+
+.galery {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--clr-bg);
+  width: 600px;
+  height: 450px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.last-screens {
+  font-family: monospace;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-auto-rows: 100px;
+  grid-gap: 10px;
+  box-sizing: border-box;
+  overflow-y: scroll;
+  padding: 2px;
+}
+
+.selected {
+  outline: 2px #0e52bf solid;
+  border-radius: 5px;
+}
+
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+}s
+
+.image-gallery-container {
+  object-fit: contain;
+}
