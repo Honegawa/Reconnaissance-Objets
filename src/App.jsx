@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
 import Db from "./utils/services/db.jsx";
-import { CLASSES } from "./utils/constants/coco-ssd.js";
 
 // TensorFlow
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
@@ -14,6 +13,7 @@ import SendCaptures from "./components/SendCaptures.jsx";
 import { RecordButtonGroup } from "./components/RecordButtonGroup.jsx";
 import { Gallery } from "./components/Gallery.jsx";
 import { Logs } from "./components/Logs.jsx";
+import { ClassFilter } from "./components/ClassFilter.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -377,25 +377,10 @@ function App() {
                   </select>
                 </div>
 
-                <div className="capture">
-                  <fieldset>
-                    <legend>Filtre d&apos;objets</legend>
-                    <div id="filter-list">
-                      {CLASSES.map((c) => (
-                        <div key={c}>
-                          <input
-                            type="checkbox"
-                            id={c}
-                            name="filter"
-                            onChange={handleFilterChange}
-                            checked={classFilter.includes(c)}
-                          />
-                          <label htmlFor={c}>{c}</label>
-                        </div>
-                      ))}
-                    </div>
-                  </fieldset>
-                </div>
+                <ClassFilter
+                  classFilter={classFilter}
+                  handleFilterChange={handleFilterChange}
+                />
               </section>
             </div>
           </>

@@ -1,0 +1,24 @@
+.capture {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.capture fieldset {
+  width: fit-content;
+  font-weight: 600;
+}
+
+#filter-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 600px;
+  height: 210px;
+  column-gap: 6px;
+  overflow-y: scroll;
+}
+
+#filter-list div {
+  text-align: left;
+}
