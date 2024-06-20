@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import Db from "./utils/services/db.jsx";
-import { CLASSES } from "./utils/constants/coco-ssd.js";
 
 // TensorFlow
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
@@ -12,6 +11,11 @@ import "./styles/App.css";
 import ToggleButton from "./components/ToggleButton.jsx";
 import SendCaptures from "./components/SendCaptures.jsx";
 import { RecordButtonGroup } from "./components/RecordButtonGroup.jsx";
+import { Gallery } from "./components/Gallery.jsx";
+import { Logs } from "./components/Logs.jsx";
+import { ClassFilter } from "./components/ClassFilter.jsx";
+import { CameraSelect } from "./components/CameraSelect.jsx";
+import { Canvases } from "./components/Canvases.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -258,14 +262,7 @@ function App() {
   };
 
   const createStoredImage = (predictions) => {
-    const occurences = {};
-    predictions
-      .filter((prediction) => !classFilter.includes(prediction.class))
-      .map((prediction) => {
-        prediction.class in occurences
-          ? (occurences[prediction.class] += 1)
-          : (occurences[prediction.class] = 1);
-      });
+    const occurences = getOccurences(predictions);
 
     const dataImage = imgCanvasRef.current.toDataURL();
     const blob = new Blob([dataImage], {
@@ -282,6 +279,14 @@ function App() {
   const createLog = (predictions) => {
     const date = new Date(Date.now()).toISOString();
 
+    const occurences = getOccurences(predictions);
+
+    const newDetection = { timestamp: date, occurences: occurences };
+
+    setLogDetections((prev) => [...prev, newDetection]);
+  };
+
+  const getOccurences = (predictions) => {
     const occurences = {};
     predictions
       .filter((prediction) => !classFilter.includes(prediction.class))
@@ -290,10 +295,7 @@ function App() {
           ? (occurences[prediction.class] += 1)
           : (occurences[prediction.class] = 1);
       });
-
-    const newDetection = { timestamp: date, occurences: occurences };
-
-    setLogDetections((prev) => [...prev, newDetection]);
+    return occurences;
   };
 
   return (
@@ -312,28 +314,12 @@ function App() {
           <>
             <div className="detection-panel">
               <section className="cam">
-                <div className="canvases">
-                  <div className="video-container">
-                    <h2>Vidéos en temps Réel</h2>
-                    <video
-                      preload="none"
-                      id="video"
-                      onCanPlay={handleCanPlayVideo}
-                      ref={videoRef}
-                    />
-                    <canvas
-                      id="detection-video-canva"
-                      ref={vidDetectionRef}
-                    ></canvas>
-                  </div>
-
-                  <div className="detection-container">
-                    <h2>Capture d&apos;image</h2>
-                    <div>
-                      <canvas ref={imgCanvasRef}> </canvas>
-                    </div>
-                  </div>
-                </div>
+                <Canvases
+                  imgCanvasRef={imgCanvasRef}
+                  videoRef={videoRef}
+                  vidDetectionRef={vidDetectionRef}
+                  handleCanPlayVideo={handleCanPlayVideo}
+                />
 
                 <div className="buttons">
                   <button
@@ -355,134 +341,28 @@ function App() {
               </section>
 
               <section className="controls">
-                <div className="choix_camera">
-                  <label htmlFor="camera-select">Choix de la caméra: </label>
-                  <select
-                    name="camera"
-                    id="camera-select"
-                    onChange={handleCamChange}
-                  >
-                    <option value="" hidden>
-                      Selectionner une caméra
-                    </option>
-                    {userDevices.map((device, index) => (
-                      <option
-                        key={index}
-                        id={device.deviceId}
-                        value={device.deviceId}
-                      >
-                        {device.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CameraSelect
+                  userDevices={userDevices}
+                  handleCamChange={handleCamChange}
+                />
 
-                <div className="capture">
-                  <fieldset>
-                    <legend>Filtre d&apos;objets</legend>
-                    <div id="filter-list">
-                      {CLASSES.map((c) => (
-                        <div key={c}>
-                          <input
-                            type="checkbox"
-                            id={c}
-                            name="filter"
-                            onChange={handleFilterChange}
-                            checked={classFilter.includes(c)}
-                          />
-                          <label htmlFor={c}>{c}</label>
-                        </div>
-                      ))}
-                    </div>
-                  </fieldset>
-                </div>
+                <ClassFilter
+                  classFilter={classFilter}
+                  handleFilterChange={handleFilterChange}
+                />
               </section>
             </div>
           </>
         )}
 
         <section className="log-galerie">
-          <div className="log">
-            <h2>Logs des Captures</h2>
-            <div id="log-console">
-              <table>
-                <thead>
-                  <tr>
-                    <th id="table-date">Date</th>
-                    <th>Objet</th>
-                    <th id="table-occurence">Occurences</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logDetections.map((detection) => (
-                    <Fragment key={detection.timestamp}>
-                      <tr>
-                        <td
-                          rowSpan={
-                            Object.keys(detection.occurences).length
-                              ? Object.keys(detection.occurences).length
-                              : 1
-                          }
-                        >
-                          {`${new Date(
-                            detection.timestamp
-                          ).toLocaleTimeString()} ${new Date(
-                            detection.timestamp
-                          ).toLocaleDateString()}`}
-                        </td>
-                        {Object.entries(detection.occurences)[0] ? (
-                          Object.entries(detection.occurences)[0].map(
-                            (entry) => (
-                              <td key={`${detection.timestamp}-${entry}`}>
-                                {entry}
-                              </td>
-                            )
-                          )
-                        ) : (
-                          <>
-                            <td></td>
-                            <td></td>
-                          </>
-                        )}
-                      </tr>
-                      {Object.entries(detection.occurences).length > 1 &&
-                        Object.entries(detection.occurences)
-                          .slice(1)
-                          .map((entry) => (
-                            <tr key={`${detection.timestamp}-${entry[0]}`}>
-                              <td>{entry[0]}</td>
-                              <td>{entry[1]}</td>
-                            </tr>
-                          ))}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <Logs logDetections={logDetections} />
 
-          <div className="galery">
-            <h2>Galerie ({imageURLS.length !== 0 ? imageURLS.length : 0})</h2>
-            <div className="last-screens">
-              {imageURLS.map((img, index) => (
-                <div
-                  key={index}
-                  className={`image-gallery-container ${
-                    attachments.find((a) => a.timestamp === img.timestamp)
-                      ? "selected"
-                      : ""
-                  }`}
-                >
-                  <img
-                    className="gallery-image"
-                    id={`img-${img.timestamp}`}
-                    src={img.url}
-                    onClick={handleClickImage}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          <Gallery
+            attachments={attachments}
+            imageURLS={imageURLS}
+            handleClickImage={handleClickImage}
+          />
         </section>
 
         <section className="mailing">
