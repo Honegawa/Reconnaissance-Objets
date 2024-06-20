@@ -14,6 +14,7 @@ import { RecordButtonGroup } from "./components/RecordButtonGroup.jsx";
 import { Gallery } from "./components/Gallery.jsx";
 import { Logs } from "./components/Logs.jsx";
 import { ClassFilter } from "./components/ClassFilter.jsx";
+import { CameraSelect } from "./components/CameraSelect.jsx";
 
 function App() {
   const videoRef = useRef(null);
@@ -355,27 +356,10 @@ function App() {
               </section>
 
               <section className="controls">
-                <div className="choix_camera">
-                  <label htmlFor="camera-select">Choix de la caméra: </label>
-                  <select
-                    name="camera"
-                    id="camera-select"
-                    onChange={handleCamChange}
-                  >
-                    <option value="" hidden>
-                      Selectionner une caméra
-                    </option>
-                    {userDevices.map((device, index) => (
-                      <option
-                        key={index}
-                        id={device.deviceId}
-                        value={device.deviceId}
-                      >
-                        {device.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CameraSelect
+                  userDevices={userDevices}
+                  handleCamChange={handleCamChange}
+                />
 
                 <ClassFilter
                   classFilter={classFilter}
